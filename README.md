@@ -1,5 +1,7 @@
 ### Скоморохов Кирилл | 8 (900) 988-75-37 | Т-Банк | tg = @sk_kiriII  | vk = sk_kirill | Delphi7 | Pascal
 
+> Стоимость - 600₽
+
 # Задача 10
 
 Создать модуль, реализующий представление длинного целого числа в виде строки символов,  
@@ -33,10 +35,10 @@
 - `TLongIntegerString`: Определяет тип string, который будет использоваться для представления длинного целого числа.
 
 ## Процедуры и функции:
-- `InitLongIntegerString(Value: string): TLongIntegerString`: Инициализирует TLongIntegerString из строки.
-- `LongIntegerAddDigit(var Num: TLongIntegerString; Digit: Char)`: Добавляет цифру к концу строки, представляющей длинное целое число.
-- `IsDigitsOnly(Num: TLongIntegerString): Boolean`: Проверяет, состоят ли все символы в строке из цифр.
-- `LongIntegerAdd(Num1, Num2: TLongIntegerString): TLongIntegerString`: Складывает два длинных целых числа, представленных как строки, попозиционно.
+- `InitLongIntegerString(Value: string): TLongIntegerString`: Инициализирует TLongIntegerString из строки.  
+- `LongIntegerAddDigit(var Num: TLongIntegerString; Digit: Char)`: Добавляет цифру к концу строки, представляющей длинное целое число.  
+- `IsDigitsOnly(Num: TLongIntegerString): Boolean`: Проверяет, состоят ли все символы в строке из цифр.  
+- `LongIntegerAdd(Num1, Num2: TLongIntegerString): TLongIntegerString`: Складывает два длинных целых числа, представленных как строки, попозиционно.  
 - `LongIntegerSubtract(Num1, Num2: TLongIntegerString): TLongIntegerString`: Вычитает два длинных целых числа, представленных как строки, попозиционно.
 - `LongIntegerMultiply(Num1, Num2: TLongIntegerString): TLongIntegerString`: Умножает два длинных целых числа, представленных как строки, попозиционно.
 - `LongIntegerDivide(Num1, Num2: TLongIntegerString): TLongIntegerString`: Делит два длинных целых числа, представленных как строки, нацело, попозиционно.
