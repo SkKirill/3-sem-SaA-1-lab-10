@@ -7,7 +7,6 @@ uses
 
 
 var
-  inf : Integer;
   TestStringInteger: TLongIntegerString;
 begin
 
@@ -64,7 +63,7 @@ begin
 
   // LongIntegerDivide
   Write('LongIntegerDivide: ');
-  if LongIntegerDivide('12345', '6789') = '1' then
+  if LongIntegerDivide('55', '5') = '11' then
     WriteLn('success')
   else
     WriteLn('error');

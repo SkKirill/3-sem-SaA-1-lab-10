@@ -12,10 +12,11 @@ function InitLongIntegerString(Value: string): TLongIntegerString;
 procedure LongIntegerAddDigit(var Num: TLongIntegerString; Digit: Char);
 function IsDigitsOnly(Num: TLongIntegerString): Boolean;
 function LongIntegerAdd(Num1, Num2: TLongIntegerString): TLongIntegerString;
-function LongIntegerSubtract(Num1, Num2: TLongIntegerString): TLongIntegerString;
+function LongIntegerSubtract(minuend, subtrahend: TLongIntegerString): TLongIntegerString;
 function LongIntegerMultiply(Num1, Num2: TLongIntegerString): TLongIntegerString;
-function LongIntegerDivide(Num1, Num2: TLongIntegerString): TLongIntegerString;
+function LongIntegerDivide(dividend, divider: TLongIntegerString): TLongIntegerString;
 function LongIntegerMod(Num1, Num2: TLongIntegerString): TLongIntegerString;
+
 
 implementation
 
@@ -90,68 +91,163 @@ begin
   Result := InitLongIntegerString(str);
 end;
 
-function LongIntegerSubtract(Num1, Num2: TLongIntegerString): TLongIntegerString;
+function SubstractWithoutSign(more, less: TLongIntegerString) : TLongIntegerString;
+var
+  i, j, k, carry, countZero, resLen: Integer;
+  last, carryRes, stringResult: String;
+  good: Boolean;
+begin
+  stringResult := '';
+  last := '';
+  i := 1;
+  while ((Length(more)-i+1) <> Length(less)) do
+    begin
+      stringResult := stringResult + last;
+      last := more[i];
+      Inc(i);
+    end;
+
+  if last <> ''
+    then carry := StrToInt(last)
+    else carry := 0;
+
+  for j := 1 to Length(less) do
+    begin
+      carry := carry * 10 + StrToInt(more[i]) - StrToInt(less[j]);
+      if carry < 0 then
+        begin
+          countZero := 0;
+          resLen := Length(stringResult);
+          carry := 10 + StrToInt(more[i]) - StrToInt(less[j]);
+          good := False;
+          while not good do
+            begin
+              if stringResult[resLen-countZero] <> '0' then
+                begin
+                  carryRes := stringResult[resLen-countZero];
+                  stringResult[resLen-countZero] := Chr(Ord(carryRes[1])-1);
+                  good := True;
+                end
+              else
+                stringResult[resLen-countZero] := '9';
+
+              Inc(countZero);
+            end;
+          carry := 90 + carry;
+        end;
+
+      if (Length(stringResult) > 0) and (stringResult[1] = '0') then
+        begin
+          carryRes := '';
+          for k := 1 to Length(stringResult)-1 do
+            carryRes[k] := stringResult[k+1];
+          stringResult := carryRes;
+        end;
+
+      if carry div 10 <> 0
+        then stringResult := stringResult + IntToStr(carry div 10)
+        else if length(stringResult) > 0 then stringResult := stringResult + '0';
+
+      carry := carry mod 10;
+      Inc(i);
+    end;
+
+  Result := stringResult + IntToStr(carry);
+end;
+
+function SignatureDefinition(var longIntStr: TLongIntegerString): Boolean;
+var
+  carry: TLongIntegerString;
+  i: Integer;
+begin
+  Result := True;
+  if (Length(longIntStr) > 0) and (longIntStr[1] = '-') then
+    begin
+      Result := False;
+      carry := '';
+      for i := 2 to Length(longIntStr) do
+        carry := longIntStr[i];
+
+      longIntStr := carry;
+    end;
+end;
+
+function LongIntegerSubtract(minuend, subtrahend: TLongIntegerString): TLongIntegerString;
 var
   maxLength1, maxLength2: Integer;
-  i, j, carry: Integer;
-  ResultStr, last: String;
-
+  i: Integer;
+  more, sign1, sign2, ok: Boolean;
+  Temp: TLongIntegerString;
 begin
-  maxLength1 := Length(Num1);
-  maxLength2 := Length(Num2);
+  sign1 := SignatureDefinition(minuend);
+  sign2 := SignatureDefinition(subtrahend);
 
-  if maxLength1 < maxLength2
-    then ResultStr := '-'
-    else ResultStr := '';
-
-  last := '';
-  carry := 0;
-  if maxLength1 > maxLength2 then
-    begin
-      i := 1;
-      while (maxLength1 <> maxLength2) do
-        begin
-          ResultStr := ResultStr + last;
-          last := Num1[i];
-          Dec(maxLength1);
-          Inc(i);
-        end;
-
-      carry := StrToInt(last);
-      for j := 1 to maxLength2 do
-        begin
-          carry := carry * 10 + StrToInt(Num1[i]) - StrToInt(Num2[j]);
-          if carry div 10 <> 0
-            then ResultStr := ResultStr + IntToStr(carry div 10);
-          carry := carry mod 10;
-          Inc(i);
-        end;
-
-      ResultStr := ResultStr + IntToStr(carry);
-    end
+  if (sign1 and not sign2)
+    then Result := LongIntegerAdd(minuend, subtrahend)
   else
-    begin
-      i := 1;
-      while (maxLength1 <> maxLength2) do
-        begin
-          ResultStr := ResultStr + last;
-          last := Num2[i];
-          Dec(maxLength2);
-          Inc(i);
-        end;
+  if (not sign1 and sign2)
+    then Result := '-' + LongIntegerAdd(minuend, subtrahend)
+  else
+    if (sign1 and sign2) then
+      begin
+        maxLength1 := Length(minuend);
+        maxLength2 := Length(subtrahend);
 
-      carry := StrToInt(last);
-      for j := 1 to maxLength1 do
-        begin
-          carry := carry * 10 + StrToInt(Num2[i]) - StrToInt(Num1[j]);
-          ResultStr := ResultStr + IntToStr(carry div 10);
-          carry := carry mod 10;
-          Inc(i);
-        end;
+        if maxLength1 < maxLength2
+          then Result := '-' + SubstractWithoutSign(subtrahend, minuend)
+        else
+          if maxLength1 = maxLength2 then
+            begin
+              more := true;
+              ok := true;
+              i := 1;
+              while ok and (i <= maxLength1) do
+                begin
+                  if (Ord(minuend[i]) <> Ord(subtrahend[i])) then
+                    begin
+                      more := Ord(minuend[i]) > Ord(subtrahend[i]);
+                      ok := false;
+                    end;
+                  Inc(i)
+                end;
+              if more
+                then Result := SubstractWithoutSign(minuend, subtrahend)
+                else Result := '-' + SubstractWithoutSign(subtrahend, minuend);
+            end
+          else Result := SubstractWithoutSign(minuend, subtrahend);
+      end
+    else
+      begin
+        Temp := minuend;
+        minuend := subtrahend;
+        subtrahend := Temp;
 
-      ResultStr := ResultStr + IntToStr(carry);
-    end;
-  Result := ResultStr;
+        maxLength1 := Length(minuend);
+        maxLength2 := Length(subtrahend);
+
+        if maxLength1 < maxLength2
+          then Result := '-' + SubstractWithoutSign(subtrahend, minuend)
+        else
+          if maxLength1 = maxLength2 then
+            begin
+              more := true;
+              ok := true;
+              i := 1;
+              while ok and (i <= maxLength1) do
+                begin
+                  if (Ord(minuend[i]) <> Ord(subtrahend[i])) then
+                    begin
+                      more := Ord(minuend[i]) > Ord(subtrahend[i]);
+                      ok := false;
+                    end;
+                  Inc(i)
+                end;
+              if more
+                then Result := SubstractWithoutSign(minuend, subtrahend)
+                else Result := '-' + SubstractWithoutSign(subtrahend, minuend);
+            end
+          else Result := SubstractWithoutSign(minuend, subtrahend);
+      end;
 end;
 
 function LongIntegerMultiply(Num1, Num2: TLongIntegerString): TLongIntegerString;
@@ -191,63 +287,88 @@ begin
   Result := lastSlag;
 end;
 
-function LongIntegerDivide(Num1, Num2: TLongIntegerString): TLongIntegerString;
+function LongIntegerDivide(dividend, divider: TLongIntegerString): TLongIntegerString;
 var
-  i, j, k, carry, len1, len2: Integer;
-  Digit1, Digit2, ResultDigit: Char;
-  Temp: String;
+  i, j, dot, current, dividendLen, dividerLen, lenRes: Integer;
+  currentDividend, remainder: TLongIntegerString;
+  more, endWhile, ok: Boolean;
 begin
-  len1 := Length(Num1);
-  len2 := Length(Num2);
+  dividendLen := Length(dividend);
+  dividerLen := Length(divider);
 
-  // Обеспечение нулей слева, чтобы строки имели одинаковую длину
-  if len1 < len2 then
-    Num1 := StringOfChar('0', len2 - len1) + Num1;
-
-  // Выделение памяти для строки результата
   Result := '';
-  
-  // Инициализация переменных для вычисления
-  carry := 0; 
-  k := 1; // позиция в строке результата
-
-  // Цикл по каждой цифре делимого
-  for i := 1 to len1 do
-  begin
-    // Извлечение цифры делимого 
-    Digit1 := Num1[i];
-
-    // Цикл по каждой цифре делителя
-    for j := 1 to len2 do
+  currentDividend := '';
+  remainder := '';
+  dot := 0;
+  endWhile := True;
+  i := 1;
+  while endWhile do
     begin
-      // Извлечение цифры делителя
-      Digit2 := Num2[j];
+      currentDividend := remainder;
+      more := True;
+      if currentDividend = '0' then currentDividend := '';
+      while Length(currentDividend) <> dividerLen do
+        begin
+          if i > dividendLen then
+            begin
+              currentDividend := currentDividend + '0';
+              Inc(dot);
+            end
+          else currentDividend := currentDividend + dividend[i];
 
-      // Вычисление результата
-      ResultDigit := Chr((Ord(Digit1) - Ord('0') - carry + Ord(Digit2) - Ord('0')) mod 10 + Ord('0'));
+          if more
+            then more := dividend[i] > divider[i];
 
-      // Перенос 
-      if Ord(Digit1) - Ord('0') - carry + Ord(Digit2) - Ord('0') < 0 then
-        carry := 1
-      else
-        carry := 0;
+          Inc(i);
+        end;
 
-      // Добавление результата в строку
-      Temp := Result;
-      Result := ResultDigit + Temp;
+      ok := true;
+      j := 1;
+      while (j < dividerLen) and ok do
+        begin
+          if (Ord(currentDividend[j]) <> Ord(divider[j])) then
+            begin
+              more := Ord(currentDividend[j]) > Ord(divider[j]);
+              ok := false;
+            end;
+          Inc(j)
+        end;
 
-      // Сдвиг строки результата
-      Result := StringOfChar('0', k - 1) + Result;
-      k := k + 1;
+      if not more then
+        if i > dividendLen then
+          begin
+            currentDividend := currentDividend + '0';
+            Inc(dot);
+          end
+        else
+          begin
+            currentDividend := currentDividend + dividend[i];
+            Inc(i);
+          end;
+
+      remainder := LongIntegerSubtract(currentDividend, divider);
+      current := 1;
+      while LongIntegerSubtract(remainder, divider)[1] <> '-' do
+        begin
+          Inc(current);
+          remainder := LongIntegerSubtract(remainder, divider);
+        end;
+
+      endWhile := not ((i > dividendLen) and (remainder = '0'));
+
+      Result := Result + IntToStr(current);
     end;
 
-    // Сдвиг строки делимого
-    Num1 := StringOfChar('0', 1) + Num1;
-  end;
-
-  // Удаление лидирующих нулей из результата
-  while (Result[1] = '0') and (Length(Result) > 1) do
-    Result := Copy(Result, 2, Length(Result) - 1);
+  if dot > 0 then
+    begin
+      Result := Result + ' ';
+      lenRes := Length(Result);
+      for i := 0 to dot do
+        begin
+          Result[lenRes - i] := Result[lenRes - i - 1]
+        end;
+      Result[lenRes - dot - 1] := ',';
+    end;
 end;
 
 function LongIntegerMod(Num1, Num2: TLongIntegerString): TLongIntegerString;
