@@ -15,7 +15,7 @@ function LongIntegerAdd(Num1, Num2: TLongIntegerString): TLongIntegerString;
 function LongIntegerSubtract(minuend, subtrahend: TLongIntegerString): TLongIntegerString;
 function LongIntegerMultiply(Num1, Num2: TLongIntegerString): TLongIntegerString;
 function LongIntegerDivide(dividend, divider: TLongIntegerString): TLongIntegerString;
-function LongIntegerMod(Num1, Num2: TLongIntegerString): TLongIntegerString;
+function LongIntegerMod(dividend, divider: TLongIntegerString): TLongIntegerString;
 
 
 implementation
@@ -322,29 +322,32 @@ begin
           Inc(i);
         end;
 
-      ok := true;
-      j := 1;
-      while (j < dividerLen) and ok do
+      if Length(currentDividend) < Length(divider) then
         begin
-          if (Ord(currentDividend[j]) <> Ord(divider[j])) then
+          ok := true;
+          j := 1;
+          while (j < dividerLen) and ok do
             begin
-              more := Ord(currentDividend[j]) > Ord(divider[j]);
-              ok := false;
+              if (Ord(currentDividend[j]) <> Ord(divider[j])) then
+                begin
+                  more := Ord(currentDividend[j]) > Ord(divider[j]);
+                  ok := false;
+                end;
+              Inc(j)
             end;
-          Inc(j)
-        end;
 
-      if not more then
-        if i > dividendLen then
-          begin
-            currentDividend := currentDividend + '0';
-            Inc(dot);
-          end
-        else
-          begin
-            currentDividend := currentDividend + dividend[i];
-            Inc(i);
-          end;
+          if not more then
+            if i > dividendLen then
+              begin
+                currentDividend := currentDividend + '0';
+                Inc(dot);
+              end
+            else
+              begin
+                currentDividend := currentDividend + dividend[i];
+                Inc(i);
+              end;
+        end;
 
       remainder := LongIntegerSubtract(currentDividend, divider);
       current := 1;
@@ -361,56 +364,96 @@ begin
 
   if dot > 0 then
     begin
-      Result := Result + ' ';
       lenRes := Length(Result);
-      for i := 0 to dot do
+      if lenRes = dot
+        then Result := '0,' + Result
+      else
         begin
-          Result[lenRes - i] := Result[lenRes - i - 1]
+          currentDividend := ',';
+          for i := 1 to dot do
+            currentDividend := currentDividend + Result[lenRes-i+1];
+          for i := 1 to lenRes - dot do
+            currentDividend := currentDividend + Result[i];
         end;
-      Result[lenRes - dot - 1] := ',';
     end;
 end;
 
-function LongIntegerMod(Num1, Num2: TLongIntegerString): TLongIntegerString;
+function LongIntegerMod(dividend, divider: TLongIntegerString): TLongIntegerString;
 var
-  i, carry, len1, len2: Integer;
-  Digit1, Digit2, ResultDigit: Char;
+  i, j, dot, current, dividendLen, dividerLen, lenRes: Integer;
+  currentDividend, remainder: TLongIntegerString;
+  more, endWhile, ok: Boolean;
 begin
-  len1 := Length(Num1);
-  len2 := Length(Num2);
+  dividendLen := Length(dividend);
+  dividerLen := Length(divider);
 
-  if len1 < len2 then
-    Num1 := StringOfChar('0', len2 - len1) + Num1
-  else if len2 < len1 then
-    Num2 := StringOfChar('0', len1 - len2) + Num2;
-
-  // ?????????????? ????????? ? carry
   Result := '';
-  carry := 0;
-
-  // ?????????? ?????? ???????????, ??????? ? ??????? ????????
-  for i := Length(Num1) downto 1 do
-  begin
-    Digit1 := Num1[i];
-    Digit2 := Num2[i];
-    ResultDigit := Chr(Ord(Digit1) + Ord(Digit2) + carry - 2 * Ord('0'));
-
-    // ???? ????????? ?????? 9, ????????????? carry
-    if Ord(ResultDigit) > Ord('9') then
+  currentDividend := '';
+  remainder := '';
+  dot := 0;
+  endWhile := True;
+  i := 1;
+ while endWhile do
     begin
-      carry := 1;
-      ResultDigit := Chr(Ord(ResultDigit) - 10);
-    end
-    else
-      carry := 0;
+      currentDividend := remainder;
+      more := True;
+      if currentDividend = '0' then currentDividend := '';
+      while Length(currentDividend) <= dividerLen do
+        begin
+          if i > dividendLen then
+            begin
+              endWhile := False;
+            end
+          else currentDividend := currentDividend + dividend[i];
 
-    // ????????? ????????? ? ?????? ?????? Result
-    Result := ResultDigit + Result;
-  end;
+          if more
+            then more := dividend[i] > divider[i];
 
-  // ???? carry ??? ?? ????? 0, ????????? ??? ? ?????? Result
-  if carry = 1 then
-    Result := '1' + Result;
+          Inc(i);
+        end;
+
+      if Length(currentDividend) < Length(divider) then
+        begin
+          ok := true;
+          j := 1;
+          while (j < dividerLen) and ok do
+            begin
+              if (Ord(currentDividend[j]) <> Ord(divider[j])) then
+                begin
+                  more := Ord(currentDividend[j]) > Ord(divider[j]);
+                  ok := false;
+                end;
+              Inc(j)
+            end;
+
+          if not more then
+            if i > dividendLen then
+              begin
+                endWhile := False;
+              end
+            else
+              begin
+                currentDividend := currentDividend + dividend[i];
+                Inc(i);
+              end;
+        end;
+
+      remainder := currentDividend;
+      if endWhile then
+        begin
+          remainder := LongIntegerSubtract(currentDividend, divider);
+          current := 1;
+          while LongIntegerSubtract(remainder, divider)[1] <> '-' do
+            begin
+              Inc(current);
+              remainder := LongIntegerSubtract(remainder, divider);
+            end;
+        end;
+
+      endWhile := not (i > dividendLen);
+
+      Result := remainder;
+    end;
 end;
 
 end.

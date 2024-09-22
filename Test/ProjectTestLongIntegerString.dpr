@@ -63,7 +63,7 @@ begin
 
   // LongIntegerDivide
   Write('LongIntegerDivide: ');
-  if LongIntegerDivide('55', '5') = '11' then
+  if LongIntegerDivide('50', '100') = '0,5' then
     WriteLn('success')
   else
     WriteLn('error');
