@@ -7,8 +7,11 @@ uses
 
 
 var
+  inf : Integer;
   TestStringInteger: TLongIntegerString;
 begin
+
+  // HELLO VLAD
   // InitLongIntegerString
   Write('InitLongIntegerString: ');
   TestStringInteger := InitLongIntegerString('12345');
